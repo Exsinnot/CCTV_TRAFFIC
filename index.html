@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map with Marker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+
+        #map {
+            height: 100%;
+            width: 79%;
+            border-right: 2px solid #ddd;
+        }
+
+        .displayright {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .imglog {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        span {
+            font-size: 16px;
+            color: #333;
+            display: block;
+        }
+
+        span:first-child {
+            font-weight: bold;
+            font-size: 18px;
+            color: #555;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="map"></div>
+    <div class="displayright" style="width: 20%; display: inline-block; height: 100%; ">
+        <div style="width: 100%; margin-bottom: 15px;" >
+            <img class="imglog" src="https://lh5.googleusercontent.com/p/AF1QipPBNqF5D6I8C8RT0SaP_25TJd7rZJJOM46p3l4e=w408-h306-k-no"
+                alt="">
+        </div>
+        <div>
+            <span>หน้าหมู่บ้านรัต</span>
+        </div>
+        <div>
+            <span>สถานะการจราจรฝั่งซ้าย</span>
+            <span>รถติด</span><br>
+        </div>
+        <div>
+            <span>สถานะการจราจรฝั้งขวา</span>
+            <span>การจารจรสะดวก</span><br>
+        </div>
+        <div>
+            <span>จำนวนรถบนถนนโดยเฉลี่ยฝั่งซ้าย</span>
+            <span>21 คัน</span><br>
+        </div>
+        <div>
+            <span>จำนวนรถบนถนนโดยเฉลี่ยฝั่งขวา</span>
+            <span>20 คัน</span><br>
+        </div>
+        <div>
+            <span>ความเร็วโดยเฉลี่ยฝั่งซ้าย</span>
+            <span>19 km/h</span><br>
+        </div>
+        <div>
+            <span>ความเร็วโดยเฉลี่ยฝั่งขวา</span>
+            <span>19 km/h</span><br>
+        </div>
+        <div>
+            <span>ข้อมูลเมื่อ</span>
+            <span>19/2/2024 19.44.23 น.</span><br>
+        </div>
+        <div>
+            <canvas id="myLineChart" width="100%" ></canvas>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // สร้างแผนที่และกำหนดตำแหน่งเริ่มต้น
+        const map = L.map('map', {
+            center: [13.98898281028614, 100.62920139721632], // ตำแหน่งเริ่มต้น
+            zoom: 15, // ระดับการซูม
+            dragging: false, // ปิดการเลื่อน
+            zoomControl: false, // ปิดการควบคุมซูม
+            scrollWheelZoom: false, // ปิดการซูมด้วยเมาส์
+            doubleClickZoom: false, // ปิดการซูมด้วยการดับเบิลคลิก
+            boxZoom: false, // ปิดการลากเพื่อซูม
+            keyboard: false // ปิดการซูมด้วยคีย์บอร์ด
+        });
+
+        // เพิ่มแผนที่พื้นหลังจาก OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // ล็อคขอบเขตของแผนที่
+        const bounds = [[13.948, 100.589], [14.029, 100.669]]; // ขอบเขต [ละติจูด, ลองจิจูด]
+        map.setMaxBounds(bounds);
+        map.on('drag', function () {
+            map.panInsideBounds(bounds, { animate: false }); // ป้องกันการเลื่อนออกนอกขอบเขต
+        });
+
+        // เพิ่มตำแหน่ง Marker
+        const locations = [
+            { lat: 13.7563, lng: 100.5018, name: 'Bangkok', img: 'https://lh5.googleusercontent.com/p/AF1QipPBNqF5D6I8C8RT0SaP_25TJd7rZJJOM46p3l4e=w408-h306-k-no' },
+            { lat: 13.988816239946333, lng: 100.63332127001269, name: 'Grand Palace', img: 'https://lh5.googleusercontent.com/p/AF1QipPBNqF5D6I8C8RT0SaP_25TJd7rZJJOM46p3l4e=w408-h306-k-no' },
+        ];
+        locations.forEach(loc => {
+            L.marker([loc.lat, loc.lng])
+                .addTo(map)
+                .bindPopup(`<h3>${loc.name}</h3><img src="${loc.img}" alt="${loc.name}">`);
+        });
+
+        // marker.openPopup();
+
+
+    
+    // สร้างช่วงเวลา 1 ชั่วโมง แบ่งทุกๆ 1 นาที
+    const labels = [];
+    for (let i = 0; i < 60; i++) {
+        const minutes = i.toString().padStart(2, '0'); // เติมเลข 0 ด้านหน้า
+        labels.push(`00:${minutes}`); // เช่น 00:00, 00:01, ..., 00:59
+    }
+
+    // สร้างข้อมูลสำหรับ 2 เส้น
+    const dataset1 = Array.from({ length: 60 }, () => Math.random() * 100); // ข้อมูลสุ่มเส้นที่ 1
+    const dataset2 = Array.from({ length: 60 }, () => Math.random() * 100); // ข้อมูลสุ่มเส้นที่ 2
+
+    // สร้างกราฟ
+    const ctx = document.getElementById('myLineChart').getContext('2d');
+    const myLineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels, // ใช้ช่วงเวลาที่สร้างไว้เป็นแกน X
+            datasets: [
+                {
+                    label: 'Dataset 1',
+                    data: dataset1, // ข้อมูลของเส้นที่ 1
+                    borderColor: 'rgb(75, 192, 192)', // สีของเส้นที่ 1
+                    fill: false, // ไม่เติมพื้นที่ใต้เส้น
+                    tension: 0.1 // ความโค้งของเส้น
+                },
+                {
+                    label: 'Dataset 2',
+                    data: dataset2, // ข้อมูลของเส้นที่ 2
+                    borderColor: 'rgb(192, 75, 75)', // สีของเส้นที่ 2
+                    fill: false,
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true, // แสดงคำอธิบายชุดข้อมูล
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Time (HH:MM)' // ป้ายแกน X
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Value' // ป้ายแกน Y
+                    },
+                    beginAtZero: true // เริ่มแกน Y ที่ 0
+                }
+            }
+        }
+    });
+    </script>
+</body>
+
+</html>
